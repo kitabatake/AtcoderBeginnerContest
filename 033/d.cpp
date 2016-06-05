@@ -19,25 +19,52 @@ template<typename T> void debug_2vector (vector< vector<T> > v) {
   }
 }
 
-vector<vector<int> >dots;
+/** Generic Programs **/
 
-int acute = 0, obtuse = 0, right_angle = 0;
 double calcDistance(vector<int> from, vector<int> to) {
   return sqrt(pow(to[0] - from[0], 2) + pow(to[1] - from[1], 2) );
 }
 
-void inspect(vector< vector<int> > dots){
+double yogen(vector<int> A, vector<int> B, vector<int> C) {
+  double a = calcDistance(B, C);
+  double b = calcDistance(A, C);
+  double c = calcDistance(A, B);
+  return (pow(b, 2) + pow(c, 2) - pow(a, 2)) / (2 * b * c);
+}
+
+void combination(vector<int> array, int k, vector<int> buff, vector< vector<int> >& com){
+  if (k == 0) {
+    com.push_back(buff);
+    return;
+  }
+
+  k--;
+  vector<int> tmp_combination;
+  int selection;
+  while (array.size() > 0) {
+    tmp_combination = buff;
+    selection = array[0];
+    tmp_combination.push_back(selection);
+    array.erase(array.begin());
+    combination(array, k, tmp_combination, com);
+  }
+}
+
+
+
+/** Specific Programs */
+
+vector<vector<int> >dots;
+
+int acute = 0, obtuse = 0, right_angle = 0;
+
+void inspect_triangle(vector< vector<int> > dots){
   for (int i = 0; i < 3; i++) {
-    vector< vector<int> > others = dots;
-    vector<int> target = dots[i];
-    others.erase(others.begin() + i);
-
-    double a = calcDistance(others[0], others[1]);
-    double b = calcDistance(target, others[0]);
-    double c = calcDistance(target, others[1]);
-    double cosTarget = (pow(b, 2) + pow(c, 2) - pow(a, 2)) / (2 * b * c);
-
-    cout << cosTarget << endl;
+    double cosTarget = yogen(
+      dots[i % 3], 
+      dots[(i + 1) % 3],
+      dots[(i + 2) % 3]
+    );
 
     if (fabs(cosTarget) < DBL_EPSILON) {
       right_angle++;
@@ -48,42 +75,8 @@ void inspect(vector< vector<int> > dots){
       return;
     }
   }
-
   acute++;
 }
-
-
-
-void combination(vector<int> array, int k, vector<int> com){
-  if (k == 0) {
-    debug_vector(com);
-    inspect(
-      {
-        dots[com[0]],
-        dots[com[1]],
-        dots[com[2]]
-      }
-    );
-    return;
-  }
-
-  k--;
-  vector<int> tmp_combination;
-  int selection;
-  while (array.size() > 0) {
-    tmp_combination = com;
-    selection = array[0];
-    tmp_combination.push_back(selection);
-    array.erase(array.begin());
-    combination(array, k, tmp_combination);
-  }
-}
-
-
-
-
-
-
 
 
 int main(){
@@ -100,8 +93,18 @@ int main(){
     dots[i] = {x, y};
   }
 
+  vector< vector<int> > combinations;
+  combination(indexes, 3, {}, combinations);
 
+  for (vector<int> com: combinations) {
+    inspect_triangle(
+      {
+        dots[com[0]],
+        dots[com[1]],
+        dots[com[2]]
+      }
+    );
+  }
 
-  combination(indexes, 3, {});
   cout << acute << " " << right_angle << " " << obtuse << endl;
 }
