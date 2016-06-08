@@ -10,31 +10,35 @@ template<typename T> void debug_vector (vector<T> v) {
   }
 }
 
+typedef double ll;
 
-
-
-
-typedef long long ll;
 
 int main() {
   int n, k;
   cin >> n >> k;
-  vector<ll> ruiseki(n + 1);
-  ruiseki[0] = 1;
-  int tmp  = 1;
+  vector<ll> s(n);
   for (int i = 0; i < n; i++) {
-    cin >> tmp;
-    ruiseki[i + 1] = ruiseki[i] * tmp;
+    cin >> s[i];
+    if (s[i] == 0) {
+      cout << n << endl;
+      return 0;
+    }
   }
 
-  for (int ans  = n; ans > 0; ans--) {
-    for (int i = ans - 1; i < n; i++) {
-      if (ruiseki[i + 1] / ruiseki[i - ans + 1] <= k) {
-        cout << ans << endl;
-        return 0;
-      }
-   }
+  ll ruiseki = 1, length = 0;
+  for (int i = 0; i < n; i++) {
+
+    if (i != 0) {
+      ruiseki /= s[i - 1];
+    }
+    
+    while (true) {
+      if ((i + length) >= s.size()) break;
+      ruiseki *= s[i + length];
+      if (ruiseki > k) break;
+      length++;
+    }
   }
 
-  cout << 0 << endl;
+  cout << length << endl;
 }
