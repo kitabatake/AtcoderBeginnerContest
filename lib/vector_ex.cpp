@@ -1,5 +1,3 @@
-#include <vector>
-#include <iostream>
 
 using namespace std;
 
@@ -22,14 +20,6 @@ template<typename T> vector<T> operator+(const vector<T>& base, const vector<T>&
   vector<T> ret = base;
   ret.insert(ret.end(), add.begin(), add.end());
   return ret;
-}
-
-
-int main (){
-
-  vector<int> base {1 , 4};
-  vector<int> add {3, 5};
-  debug_vector(base + add);
 }
 
 
