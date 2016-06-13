@@ -1,5 +1,8 @@
 #include <iostream>
 #include <vector>
+#include <map>
+#include <algorithm>
+#include <limits>
 
 using namespace std;
 typedef  long long ll;
@@ -52,7 +55,7 @@ vector< vector<int> > all_combinations(int num) {
 
 int N, W;
 
-void lowW(vector< pair<int, ll> > bagages){
+void lowW(vector< pair<ll, ll> > bagages){
 
   vector< vector<ll> >dp(2, vector<ll>(W + 1, 0));
   for(int n = 1; n <= N; n++) {
@@ -60,23 +63,18 @@ void lowW(vector< pair<int, ll> > bagages){
     int p = 1 - n % 2;
     int c = n % 2;
 
-    int c_v = bagages[n-1].first;
+    ll c_v = bagages[n-1].first;
     ll c_w = bagages[n-1].second;
 
     for (int w = 0; w <= W; w++) {
-      if (bagages[n-1].second > w) {
+      if (c_w > w) {
         dp[c][w] = dp[p][w];
         continue;
       }
 
-      dp[c][w + c_w] = max(
-        dp[c][w + c_w],
-        dp[c][w] + c_v
-      );
-
       dp[c][w] = max(
         dp[p][w],
-        dp[p][w - bagages[n-1].second] + bagages[n-1].first
+        dp[p][w - c_w] + c_v
       );
     }
   }
@@ -86,9 +84,9 @@ void lowW(vector< pair<int, ll> > bagages){
 
 
 
-#define W_MAX LLONG_MAX
+#define W_MAX numeric_limits<ll>::max()
 
-void lowV(vector< pair<int, ll> > bagages, ll max_v){
+void lowV(vector< pair<ll, ll> > bagages, ll max_v){
 
   vector< vector<ll> >dp(N +1, vector<ll>(N * max_v + 1, W_MAX));
   
@@ -97,7 +95,7 @@ void lowV(vector< pair<int, ll> > bagages, ll max_v){
     int p = 1 - n % 2;
     int c = n % 2;
 
-    int c_v = bagages[n-1].first;
+    ll c_v = bagages[n-1].first;
     ll c_w = bagages[n-1].second;
 
     dp[p][0] = 0;
@@ -128,35 +126,74 @@ void lowV(vector< pair<int, ll> > bagages, ll max_v){
   cout << ans << endl;
 }
 
-void lowN(vector< pair<int, ll> > bagages) {
+/* N = 30は大きすぎるため、二つに分割し、後半部分の各組み合わせの総和と残り重量を、前半部分のベストなw, vに整理したものから
+ * 算出したvを足し合わせ、ベストな価値を算出する
+ */
+void lowN(vector< pair<ll, ll> > bagages) {
 
-  vector< vector<int> > all = all_combinations(N);
-
-  int max = 0;
-
-  for (vector<int> com: all) {
-    int w_sum = 0, v_sum = 0;
-    for (int i:com) {
+  // まずは前半部分の価値あるw, vのペアを抽出する
+  vector< pair<ll, ll> > first;
+  first.push_back(make_pair(0, 0));
+  map<ll, ll> worth_checker; // 同じweightでvalueが低いものを省くためのmap
+  vector< vector<int> > first_combinations = all_combinations(N / 2);
+  for (vector<int> combination: first_combinations) {
+    ll w_sum = 0; 
+    ll v_sum = 0;
+    for (int i: combination) {
       w_sum += bagages[i].second;
       v_sum += bagages[i].first;
     }
 
-    if (w_sum <= W && v_sum > max) {
-      max = v_sum;
+    if (w_sum <= W && v_sum > worth_checker[w_sum]) {
+      worth_checker[w_sum] = v_sum;
+      first.push_back(make_pair(w_sum, v_sum));
     }
   }
 
-  cout << max << endl;
+  // より低いweightでvaluableなものがない状態に整理
+  sort(first.begin(), first.end());
+  for (int i = 0; i < first.size(); i++) {
+    if (i == 0) continue;
+    first[i].second = max(first[i - 1].second, first[i].second);
+  }
+
+  // 後半部分を掲載したものに、前半部分で有効な組み合わせを足し合わせ、価値が高いものを判定
+  ll ans = 0;
+  vector< vector<int> > second_conbinations = all_combinations(N - N/2);
+  for (vector<int> combination: second_conbinations) {
+    ll w_sum = 0;
+    ll v_sum = 0;
+    for( int i: combination) {
+      w_sum += bagages[N/2 + i].second;
+      v_sum += bagages[N/2 + i].first;
+    }
+
+    if (w_sum <= W) {
+      int additonal_first_index = lower_bound(first.begin(), first.end(), make_pair(W - w_sum, 0LL)) - first.begin() - 1;
+      // W-w_sum の値のfirst[w]が丁度あった際にadditonal_first_indexをイクリメント
+      while (first[additonal_first_index + 1].first == (W - w_sum)) {
+        additonal_first_index++;
+      }
+
+      if (additonal_first_index > 0) {
+        ans = max(v_sum + first[additonal_first_index].second, ans);
+      } else {
+        ans = max(v_sum, ans);
+      }
+    } 
+  }
+
+  cout << ans << endl;
 }
 
 int main(){
   cin >> N >> W;
-  vector< pair<int, ll> > bagages(N);
-  int max_v = 0;
+  vector< pair<ll, ll> > bagages(N);
+  ll max_v = 0;
   for (int i = 0; i < N; i++) {
-    int v, w;
+    ll v, w;
     cin >> v >> w;
-    bagages[i] = pair<int, ll>(v, w);
+    bagages[i] = pair<ll, ll>(v, w);
     max_v = max(v, max_v);
   }
 
