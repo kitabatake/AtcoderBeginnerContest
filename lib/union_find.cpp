@@ -5,7 +5,7 @@ template<typename T>
 class UnionFind {
 
   public:
-    
+
     UnionFind (int node_num)
     {
       nodes = vector<Node>(node_num);
@@ -16,6 +16,8 @@ class UnionFind {
     {
       Node &a_head = nodes[head_index(a_i)];
       Node &b_head = nodes[head_index(b_i)];
+
+      if (a_head == b_head) return;
 
       if (a_head.connected > b_head.connected) {
         a_head.connected += b_head.connected;
@@ -42,7 +44,12 @@ class UnionFind {
       int index;
       T connected;
       int forward_i;
+      bool operator== (const Node &a)
+      {
+        return index == a.index;
+      }
     };
+
 
     vector<Node> nodes;
 
