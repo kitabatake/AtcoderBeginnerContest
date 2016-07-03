@@ -36,53 +36,14 @@ struct q_item {
   vector<int> rest;
 };
 
-queue<q_item> qu;
 vector<ll> dp;
 
-vector <vector<int>> gl;
-
-// nを末尾とした際に、restにnより後ろに来るようなものがあったらinvalid.
-bool is_valid(int n, int front_mask)
+bool contain(int mask, int pos)
 {
-  vector<int> lesses = gl[1 << n];
-  REP(i, lesses.size()) {
-    if (((front_mask >> lesses[i]) & 1) != 0)
-      return false;
-  }
-  return true;
+  return (mask & (1 << pos)) != 0;
 }
 
-
-ll cumpute_dp(ll &current, vector<int> &rest)
-{
-  if (current == 0) return 1;
-  ll sum = 0;
-  for (int i = 0; i < N; i++) {
-    
-    if (((current >> i) & 1) == 0) continue;
-    int mask = current ^  (1 << i);
-    if (!is_valid(i, mask)) continue;
-    sum += dp[mask];
-  }
-
-  return sum;
-}
-
-void bfs(ll current, vector<int> rest)
-{
-  dp[current] = cumpute_dp(current, rest);
-
-  if (rest.empty()) {
-    return;
-  }
-
-  vector<int> tmp_rest = rest;
-  REP(i, rest.size()) {
-    ll tmp_current = current | (1 << rest[i]);
-    tmp_rest.erase(tmp_rest.begin());
-    qu.push({tmp_current, tmp_rest});
-  }
-}
+vector<bool> valid;
 
 
 int main()
@@ -90,21 +51,34 @@ int main()
   cin >> N >> M;
   vector<int> rest;
   dp.resize((1 << N));
-  gl.resize(1 << N);
+  valid.resize(1 << N);
+
+  vector<int> x(M), y(M);
 
   REP(i, M) {
-    int g, l;
-    cin >> g >> l;
-    gl[1 << (g - 1)].push_back(l - 1);
+    cin >> x[i] >> y[i];
+    x[i]--;
+    y[i]--;
   }
 
-  REP(i, N) rest.push_back(i);
+  REP(i, (1 << N)) {
+    valid[i] = true;
+    REP(m, M) {
+      if (contain(i, y[m]) && !contain(i, x[m])) valid[i] = false;
+    }
+  }
 
-  qu.push({0, rest});
-
-  while(qu.size() > 0) {
-    q_item qi = qu.front(); qu.pop();
-    bfs(qi.current, qi.rest);
+  dp[0] = 1;
+  for (int mask = 1; mask < (1 << N); mask++) {
+    if (!valid[mask]) continue;
+    ll sum = 0;
+    REP(n, N) {
+      if (!contain(mask, n)) continue;
+      int sub_mask = mask ^ (1 << n);
+      if (valid[sub_mask]) sum += dp[sub_mask];
+    }
+    
+    dp[mask] = sum;
   }
 
   cout << dp[(1 << N) - 1] << endl;
